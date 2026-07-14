@@ -8,22 +8,26 @@ import { buildWorktreeSessions, sessionDisplayName, threadActivityDate } from ".
 import type { GitWorktree } from "../src/worktrees";
 
 const worktree: GitWorktree = {
+  branchName: "feature/one",
   commonDir: "/repo/.git",
   gitDir: "/repo/.git/worktrees/feature",
+  headCommit: null,
   kind: "linked",
   repositoryName: "repo",
   repositoryRoot: "/repo",
-  worktreeName: "feature",
+  worktreeName: "feature/one",
   worktreeRoot: "/worktrees/feature",
 };
 
 const otherRepositoryWorktree: GitWorktree = {
+  branchName: "feature/two",
   commonDir: "/other-repo/.git",
   gitDir: "/other-repo/.git/worktrees/new-feature",
+  headCommit: null,
   kind: "linked",
   repositoryName: "other-repo",
   repositoryRoot: "/other-repo",
-  worktreeName: "new-feature",
+  worktreeName: "feature/two",
   worktreeRoot: "/worktrees/new-feature",
 };
 

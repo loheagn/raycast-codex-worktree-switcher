@@ -20,7 +20,7 @@ npm run dev
 
 ## 使用
 
-列表不按仓库分段，而是按 Codex 的最近活跃时间全局展示仍然有效的会话；仓库与 checkout 名显示在副标题中，主 checkout 标记为 `Local`，并支持按会话名、仓库名、worktree 名和路径搜索。每个会话提供：
+列表不按仓库分段，而是按 Codex 的最近活跃时间全局展示仍然有效的会话；仓库与 checkout 标识显示在副标题中：有分支时使用完整分支名，detached checkout 显示为 `Detached · <8 位提交>`。列表支持按会话名、仓库名、分支、提交标识和路径搜索。每个会话提供：
 
 - **在现有 Zed 窗口打开**：默认 Action，按 `Enter` 执行，使用 `zed --existing`。
 - **在新 Zed 窗口打开**：使用 `zed --new`。

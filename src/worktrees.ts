@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 loheagn <loheagn@icloud.com>
 // SPDX-License-Identifier: MIT
 
-import { realpath, stat } from "node:fs/promises";
+import { readFile, realpath, stat } from "node:fs/promises";
 import path from "node:path";
 
 import { type ProcessRunner, runProcess } from "./process";
@@ -16,6 +16,8 @@ export interface GitWorktree {
   repositoryRoot: string;
   repositoryName: string;
   worktreeName: string;
+  branchName: string | null;
+  headCommit: string | null;
   kind: "main" | "linked";
 }
 
@@ -39,6 +41,29 @@ async function isDirectory(directory: string): Promise<boolean> {
 
 function repositoryRootFor(commonDir: string): string {
   return path.basename(commonDir) === ".git" ? path.dirname(commonDir) : commonDir;
+}
+
+async function readHeadIdentity(gitDir: string): Promise<{
+  branchName: string | null;
+  headCommit: string | null;
+  label: string;
+}> {
+  const head = (await readFile(path.join(gitDir, "HEAD"), "utf8")).trim();
+  const symbolicPrefix = "ref: ";
+  if (head.startsWith(symbolicPrefix)) {
+    const ref = head.slice(symbolicPrefix.length);
+    const branchPrefix = "refs/heads/";
+    const branchName = ref.startsWith(branchPrefix) ? ref.slice(branchPrefix.length) : ref;
+    if (branchName.length === 0) {
+      throw new Error("Git HEAD points to an empty ref");
+    }
+    return { branchName, headCommit: null, label: branchName };
+  }
+
+  if (!/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/i.test(head)) {
+    throw new Error("Git HEAD is neither a branch nor a commit");
+  }
+  return { branchName: null, headCommit: head, label: `Detached · ${head.slice(0, 8)}` };
 }
 
 export async function validateGitWorktree(
@@ -71,13 +96,16 @@ export async function validateGitWorktree(
 
     const kind = gitDir === commonDir ? "main" : "linked";
     const repositoryRoot = kind === "main" ? worktreeRoot : repositoryRootFor(commonDir);
+    const head = await readHeadIdentity(gitDir);
     return {
       worktreeRoot,
       gitDir,
       commonDir,
       repositoryRoot,
       repositoryName: path.basename(repositoryRoot),
-      worktreeName: kind === "main" ? "Local" : path.basename(worktreeRoot),
+      worktreeName: head.label,
+      branchName: head.branchName,
+      headCommit: head.headCommit,
       kind,
     };
   } catch {

@@ -28,7 +28,7 @@ async function createRepositoryWithLinkedWorktree(): Promise<{
   const mainCheckout = path.join(root, "main repo");
   const linkedWorktree = path.join(root, "linked ; $() worktree");
   await mkdir(mainCheckout);
-  await runProcess("/usr/bin/git", ["init", mainCheckout]);
+  await runProcess("/usr/bin/git", ["init", "--initial-branch=main", mainCheckout]);
   await runProcess("/usr/bin/git", ["-C", mainCheckout, "config", "user.name", "Test"]);
   await runProcess("/usr/bin/git", ["-C", mainCheckout, "config", "user.email", "test@example.com"]);
   await runProcess("/usr/bin/git", ["-C", mainCheckout, "commit", "--allow-empty", "-m", "initial"]);
@@ -46,7 +46,9 @@ describe("validateGitWorktree", () => {
     expect(main).not.toBeNull();
     expect(main?.worktreeRoot).toBe(await realpath(mainCheckout));
     expect(main?.repositoryRoot).toBe(await realpath(mainCheckout));
-    expect(main?.worktreeName).toBe("Local");
+    expect(main?.worktreeName).toBe("main");
+    expect(main?.branchName).toBe("main");
+    expect(main?.headCommit).toBeNull();
     expect(main?.kind).toBe("main");
     expect(main?.gitDir).toBe(main?.commonDir);
 
@@ -55,9 +57,32 @@ describe("validateGitWorktree", () => {
     expect(linked?.worktreeRoot).toBe(await realpath(linkedWorktree));
     expect(linked?.repositoryRoot).toBe(await realpath(mainCheckout));
     expect(linked?.repositoryName).toBe("main repo");
-    expect(linked?.worktreeName).toBe("linked ; $() worktree");
+    const { stdout: headCommit } = await runProcess("/usr/bin/git", ["-C", linkedWorktree, "rev-parse", "HEAD"]);
+    expect(linked?.worktreeName).toBe(`Detached · ${headCommit.trim().slice(0, 8)}`);
+    expect(linked?.branchName).toBeNull();
+    expect(linked?.headCommit).toBe(headCommit.trim());
     expect(linked?.kind).toBe("linked");
     expect(linked?.gitDir).not.toBe(linked?.commonDir);
+  });
+
+  it("uses the branch name for a linked worktree", async () => {
+    const { mainCheckout, root } = await createRepositoryWithLinkedWorktree();
+    const branchWorktree = path.join(root, "branch worktree");
+    await runProcess("/usr/bin/git", [
+      "-C",
+      mainCheckout,
+      "worktree",
+      "add",
+      "-b",
+      "feature/meaningful-label",
+      branchWorktree,
+    ]);
+
+    const result = await validateGitWorktree(branchWorktree);
+
+    expect(result?.worktreeName).toBe("feature/meaningful-label");
+    expect(result?.branchName).toBe("feature/meaningful-label");
+    expect(result?.headCommit).toBeNull();
   });
 
   it("uses the checkout as the repository root when Git metadata is stored elsewhere", async () => {
@@ -66,14 +91,14 @@ describe("validateGitWorktree", () => {
     const checkout = path.join(root, "checkout");
     const gitDirectory = path.join(root, "metadata", "repository.git");
     await Promise.all([mkdir(checkout), mkdir(path.dirname(gitDirectory))]);
-    await runProcess("/usr/bin/git", ["init", "--separate-git-dir", gitDirectory, checkout]);
+    await runProcess("/usr/bin/git", ["init", "--initial-branch=main", "--separate-git-dir", gitDirectory, checkout]);
 
     const result = await validateGitWorktree(checkout);
 
     expect(result?.kind).toBe("main");
     expect(result?.repositoryRoot).toBe(await realpath(checkout));
     expect(result?.repositoryName).toBe("checkout");
-    expect(result?.worktreeName).toBe("Local");
+    expect(result?.worktreeName).toBe("main");
   });
 
   it("hides directories that no longer exist", async () => {
