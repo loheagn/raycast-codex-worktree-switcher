@@ -5,7 +5,23 @@
   "icon": "icon.png",
   "author": "loheagn",
   "license": "MIT",
+  "private": true,
   "version": "0.1.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/loheagn/raycast-codex-worktree-switcher.git"
+  },
+  "bugs": {
+    "url": "https://github.com/loheagn/raycast-codex-worktree-switcher/issues"
+  },
+  "homepage": "https://github.com/loheagn/raycast-codex-worktree-switcher#readme",
+  "keywords": [
+    "raycast-extension",
+    "codex",
+    "zed",
+    "git-worktree",
+    "macos"
+  ],
   "categories": [
     "Developer Tools",
     "Productivity"
@@ -52,8 +68,11 @@
   ],
   "scripts": {
     "build": "ray build",
+    "check": "npm test && npm run typecheck && npm run lint && npm run format:check && npm run build",
     "dev": "ray develop",
     "fix-lint": "ray lint --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "lint": "ray lint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -74,5 +93,6 @@
   },
   "engines": {
     "node": ">=22.22.2"
-  }
+  },
+  "packageManager": "npm@10.9.7"
 }

@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: 2026 loheagn <loheagn@icloud.com>
+# SPDX-License-Identifier: MIT
+
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/loheagn/raycast-codex-worktree-switcher/security/advisories/new
+    about: Report security and privacy issues privately. Do not open a public issue.

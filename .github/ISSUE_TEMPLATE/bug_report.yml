@@ -1,0 +1,78 @@
+# SPDX-FileCopyrightText: 2026 loheagn <loheagn@icloud.com>
+# SPDX-License-Identifier: MIT
+
+name: Bug report
+description: Report a reproducible problem with the extension.
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Do not attach Codex databases, JSONL files, conversation content, private repository names, or access tokens. Replace private paths and names with placeholders.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Describe the observed behavior and what you expected instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      placeholder: |
+        1. Open Switch Codex Worktree
+        2. Search for …
+        3. Select …
+    validations:
+      required: true
+
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version
+      placeholder: "26.6"
+    validations:
+      required: true
+
+  - type: input
+    id: raycast
+    attributes:
+      label: Raycast version
+      placeholder: "1.104.22"
+    validations:
+      required: true
+
+  - type: input
+    id: codex
+    attributes:
+      label: Codex Desktop version
+      placeholder: "26.707.71524"
+    validations:
+      required: true
+
+  - type: input
+    id: zed
+    attributes:
+      label: Zed version
+      placeholder: "1.10.3"
+    validations:
+      required: true
+
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Sanitized diagnostics
+      description: Paste only logs that have been checked for private paths, repository names, session titles, and secrets.
+      render: shell
+
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy confirmation
+      options:
+        - label: I removed private paths, repository names, conversation content, credentials, and other sensitive data.
+          required: true

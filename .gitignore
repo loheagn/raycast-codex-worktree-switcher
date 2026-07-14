@@ -4,3 +4,20 @@ dist/
 .DS_Store
 coverage/
 *.log
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+
+# Codex metadata and conversation data
+*.db
+*.db-shm
+*.db-wal
+*.jsonl
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+# Local package artifacts
+*.tgz

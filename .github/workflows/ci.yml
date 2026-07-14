@@ -1,0 +1,54 @@
+# SPDX-FileCopyrightText: 2026 loheagn <loheagn@icloud.com>
+# SPDX-License-Identifier: MIT
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate on macOS and Node.js 22
+    runs-on: macos-15
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: Check types
+        run: npm run typecheck
+
+      - name: Lint source
+        run: npm run lint
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Build extension
+        run: npm run build
+
+      - name: Audit moderate and higher severity vulnerabilities
+        run: npm audit --omit=dev --audit-level=moderate

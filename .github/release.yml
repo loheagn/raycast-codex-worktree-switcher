@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: 2026 loheagn <loheagn@icloud.com>
+# SPDX-License-Identifier: MIT
+
+changelog:
+  exclude:
+    labels:
+      - skip-changelog
+  categories:
+    - title: Breaking Changes
+      labels:
+        - breaking-change
+    - title: Features
+      labels:
+        - enhancement
+    - title: Fixes
+      labels:
+        - bug
+    - title: Documentation and Maintenance
+      labels:
+        - documentation
+        - dependencies
+        - maintenance
+    - title: Other Changes
+      labels:
+        - "*"
