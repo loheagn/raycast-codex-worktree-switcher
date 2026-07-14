@@ -1,0 +1,73 @@
+{
+  "name": "codex-worktree-switcher",
+  "title": "Codex Worktree Switcher",
+  "description": "Switch Zed to the linked Git worktree for a local Codex session",
+  "icon": "icon.png",
+  "author": "loheagn",
+  "license": "MIT",
+  "version": "0.1.0",
+  "categories": ["Developer Tools", "Productivity"],
+  "platforms": ["macOS"],
+  "commands": [
+    {
+      "name": "switch-codex-worktree",
+      "title": "Switch Codex Worktree",
+      "subtitle": "Codex Worktree Switcher",
+      "description": "Open the linked Git worktree for a Codex session in Zed",
+      "mode": "view",
+      "icon": "icon.png",
+      "keywords": ["codex", "zed", "worktree", "session", "conversation", "会话", "切换"]
+    }
+  ],
+  "preferences": [
+    {
+      "name": "codexExecutable",
+      "title": "Codex CLI",
+      "description": "Absolute path to the Codex CLI executable.",
+      "type": "file",
+      "default": "/opt/homebrew/bin/codex",
+      "required": true
+    },
+    {
+      "name": "codexHome",
+      "title": "Codex Home",
+      "description": "Directory containing Codex sessions and state.",
+      "type": "directory",
+      "default": "~/.codex",
+      "required": true
+    },
+    {
+      "name": "zedApp",
+      "title": "Zed App",
+      "description": "Zed application to use when opening a worktree.",
+      "type": "appPicker",
+      "default": "dev.zed.Zed",
+      "required": true
+    }
+  ],
+  "scripts": {
+    "build": "ray build",
+    "dev": "ray develop",
+    "fix-lint": "ray lint --fix",
+    "lint": "ray lint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@raycast/api": "1.104.22",
+    "@raycast/utils": "2.2.7"
+  },
+  "devDependencies": {
+    "@raycast/eslint-config": "^2.1.1",
+    "@types/node": "^22.15.0",
+    "@types/react": "^19.0.10",
+    "eslint": "^9.22.0",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.2",
+    "vitest": "^4.1.0"
+  },
+  "engines": {
+    "node": ">=22.22.2"
+  }
+}
