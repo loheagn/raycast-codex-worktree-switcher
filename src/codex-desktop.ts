@@ -98,7 +98,12 @@ type StateThreadRow = {
 type StateDatabaseCandidate = {
   path: string;
   layout: "root" | "legacy";
-  discovered: boolean;
+  version: number;
+};
+
+type ReadableStateDatabase = StateDatabaseCandidate & {
+  rows: StateThreadRow[];
+  freshness: number;
 };
 
 export interface ListCodexThreadMetadataOptions {
@@ -122,7 +127,7 @@ export async function listCodexThreadMetadata(options: ListCodexThreadMetadataOp
   const timeoutMs = positiveTimeout(options.timeoutMs, DATABASE_TIMEOUT_MS);
   const catalogDatabasePath = options.catalogDatabasePath ?? path.join(codexHome, "sqlite", "codex-dev.db");
   const stateDatabasePaths = options.stateDatabasePath
-    ? [{ path: options.stateDatabasePath, layout: "root" as const, discovered: true }]
+    ? [stateDatabaseCandidate(options.stateDatabasePath, "root")]
     : await stateDatabaseCandidates(codexHome);
 
   let catalogRows: DesktopCatalogRow[] = [];
@@ -198,47 +203,31 @@ async function readBestStateDatabase(
   run: ProcessRunner,
   timeoutMs: number,
 ): Promise<StateThreadRow[]> {
-  const rootCandidates = candidates.filter(({ layout }) => layout === "root");
-  const rootResult = await readBestStateDatabaseGroup(sqliteExecutable, rootCandidates, run, timeoutMs);
-  if (rootResult) {
-    return rootResult;
+  // A newer filename denotes the authoritative schema generation. Within one
+  // generation, a readable root-layout database remains authoritative over a
+  // legacy snapshot. Parsed row timestamps disambiguate duplicate candidates
+  // without relying on file mtimes, which SQLite WAL writes may not update.
+  const versions = [...new Set(candidates.map(({ version }) => version))].sort((left, right) => right - left);
+  let lastError: unknown;
+
+  for (const version of versions) {
+    const readable: ReadableStateDatabase[] = [];
+    for (const candidate of candidates.filter((value) => value.version === version)) {
+      try {
+        const rows = await readStateRows(sqliteExecutable, candidate.path, run, timeoutMs);
+        readable.push({ ...candidate, rows, freshness: stateDatabaseFreshness(rows) });
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    readable.sort(compareReadableStateDatabases);
+    if (readable[0]) {
+      return readable[0].rows;
+    }
   }
 
-  // Once Codex has created a root-layout state database, that database is the
-  // archive authority. Falling back to an older legacy snapshot could revive
-  // sessions that were archived after the snapshot was last updated.
-  if (rootCandidates.some(({ discovered }) => discovered)) {
-    throw new Error("The current Codex state database could not be read");
-  }
-
-  const legacyResult = await readBestStateDatabaseGroup(
-    sqliteExecutable,
-    candidates.filter(({ layout }) => layout === "legacy"),
-    run,
-    timeoutMs,
-  );
-  if (legacyResult) {
-    return legacyResult;
-  }
-  throw new Error("No compatible current Codex state database was found");
-}
-
-async function readBestStateDatabaseGroup(
-  sqliteExecutable: string,
-  candidates: readonly StateDatabaseCandidate[],
-  run: ProcessRunner,
-  timeoutMs: number,
-): Promise<StateThreadRow[] | null> {
-  const candidate = candidates[0];
-  if (!candidate) {
-    return null;
-  }
-  try {
-    return await readStateRows(sqliteExecutable, candidate.path, run, timeoutMs);
-  } catch {
-    // A lower-version file can be a stale snapshot with obsolete archive state.
-    return null;
-  }
+  throw new Error("No compatible current Codex state database was found", { cause: lastError });
 }
 
 async function readStateRows(
@@ -307,21 +296,39 @@ async function stateDatabaseCandidates(codexHome: string): Promise<StateDatabase
 
   const rootLayout = discovered
     .filter(({ directoryIndex }) => directoryIndex === 0)
-    .sort((left, right) => right.version - left.version)
-    .map(({ file }) => ({ path: file, layout: "root" as const, discovered: true }));
+    .map(({ file, version }) => ({ path: file, layout: "root" as const, version }));
 
   const legacyLayout = discovered
     .filter(({ directoryIndex }) => directoryIndex === 1)
-    .sort((left, right) => right.version - left.version)
-    .map(({ file }) => ({ path: file, layout: "legacy" as const, discovered: true }));
+    .map(({ file, version }) => ({ path: file, layout: "legacy" as const, version }));
   if (rootLayout.length > 0 || legacyLayout.length > 0) {
     return [...rootLayout, ...legacyLayout];
   }
 
   return [
-    { path: path.join(codexHome, "state_5.sqlite"), layout: "root", discovered: false },
-    { path: path.join(codexHome, "sqlite", "state_5.sqlite"), layout: "legacy", discovered: false },
+    stateDatabaseCandidate(path.join(codexHome, "state_5.sqlite"), "root"),
+    stateDatabaseCandidate(path.join(codexHome, "sqlite", "state_5.sqlite"), "legacy"),
   ];
+}
+
+function stateDatabaseCandidate(
+  databasePath: string,
+  layout: StateDatabaseCandidate["layout"],
+): StateDatabaseCandidate {
+  const match = /^state_(\d+)\.sqlite$/.exec(path.basename(databasePath));
+  return { path: databasePath, layout, version: match ? Number(match[1]) : 0 };
+}
+
+function stateDatabaseFreshness(rows: readonly StateThreadRow[]): number {
+  return rows.reduce((freshness, row) => Math.max(freshness, row.updatedAt), 0);
+}
+
+function compareReadableStateDatabases(left: ReadableStateDatabase, right: ReadableStateDatabase): number {
+  return (
+    Number(right.layout === "root") - Number(left.layout === "root") ||
+    right.freshness - left.freshness ||
+    left.path.localeCompare(right.path)
+  );
 }
 
 function deduplicateCatalogRows(rows: readonly DesktopCatalogRow[]): DesktopCatalogRow[] {

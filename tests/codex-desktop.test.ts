@@ -61,7 +61,7 @@ describe("listCodexThreadMetadata", () => {
       if (databasePath === statePath) {
         return {
           stdout: JSON.stringify([
-            stateRow(),
+            stateRow({ name: "State-generated title" }),
             stateRow({
               id: "state-only",
               cwd: "/repo/state-only",
@@ -116,13 +116,48 @@ describe("listCodexThreadMetadata", () => {
       expect(options).toEqual({ maxBuffer: 8 * 1024 * 1024, timeoutMs: 5_000 });
     }
     const queries = run.mock.calls.map(([, args]) => args[5]);
-    expect(queries.join("\n")).not.toMatch(/preview|first_user_message|rollout_path/);
+    expect(queries.join("\n")).not.toMatch(/\b(?:body|messages?)\b|preview|first_user_message|rollout_path/);
     expect(queries.every((query) => query?.includes("PRAGMA query_only = ON"))).toBe(true);
     expect(queries.join("\n")).toContain("WHERE archived = 0");
     expect(queries.join("\n")).toContain("source IN ('cli', 'vscode', 'exec', 'appServer', 'unknown')");
   });
 
-  it("selects the highest compatible state database version", async () => {
+  it("uses a nonblank catalog display title but preserves a valid state title when the catalog title is blank", async () => {
+    const catalogPath = "/catalog.db";
+    const statePath = "/state.db";
+    const run: ProcessRunner = async (_executable, args) => {
+      if (args[4] === catalogPath) {
+        return {
+          stdout: JSON.stringify([
+            catalogRow({ id: "renamed", name: "Desktop rename" }),
+            catalogRow({ id: "catalog-blank", name: "" }),
+          ]),
+          stderr: "",
+        };
+      }
+      return {
+        stdout: JSON.stringify([
+          stateRow({ id: "renamed", name: "Generated state title" }),
+          stateRow({ id: "catalog-blank", name: "State title", recencyAt: 1_784_031_000 }),
+        ]),
+        stderr: "",
+      };
+    };
+
+    const result = await listCodexThreadMetadata({
+      codexHome: "/unused",
+      catalogDatabasePath: catalogPath,
+      stateDatabasePath: statePath,
+      run,
+    });
+
+    expect(result.map(({ id, name }) => ({ id, name }))).toEqual([
+      { id: "renamed", name: "Desktop rename" },
+      { id: "catalog-blank", name: "State title" },
+    ]);
+  });
+
+  it("selects the highest compatible state database version without using catalog coverage", async () => {
     const codexHome = await mkdtemp(path.join(os.tmpdir(), "codex-metadata-freshness-"));
     temporaryDirectories.push(codexHome);
     const legacyDirectory = path.join(codexHome, "sqlite");
@@ -180,6 +215,92 @@ describe("listCodexThreadMetadata", () => {
     ]);
   });
 
+  it("keeps a readable root database authoritative over a fresher legacy snapshot", async () => {
+    const codexHome = await mkdtemp(path.join(os.tmpdir(), "codex-metadata-same-version-"));
+    temporaryDirectories.push(codexHome);
+    const legacyDirectory = path.join(codexHome, "sqlite");
+    const rootState = path.join(codexHome, "state_5.sqlite");
+    const legacyState = path.join(legacyDirectory, "state_5.sqlite");
+    await mkdir(legacyDirectory);
+    await Promise.all([writeFile(rootState, "fixture"), writeFile(legacyState, "fixture")]);
+
+    const run: ProcessRunner = async (_executable, args) => {
+      const databasePath = args[4] ?? "";
+      if (databasePath.endsWith("codex-dev.db")) {
+        return {
+          stdout: JSON.stringify([
+            catalogRow(),
+            catalogRow({ id: "catalog-match", name: "Catalog match", cwd: "/catalog-match" }),
+          ]),
+          stderr: "",
+        };
+      }
+      if (databasePath === rootState) {
+        return {
+          stdout: JSON.stringify([
+            stateRow({ cwd: "/root/stale", updatedAt: 1_700_000_000 }),
+            stateRow({ id: "catalog-match", cwd: "/root/catalog-match", updatedAt: 1_700_000_001 }),
+          ]),
+          stderr: "",
+        };
+      }
+      if (databasePath === legacyState) {
+        return {
+          stdout: JSON.stringify([stateRow({ cwd: "/legacy/fresh", updatedAt: 1_780_000_000 })]),
+          stderr: "",
+        };
+      }
+      throw new Error("unexpected database");
+    };
+
+    await expect(listCodexThreadMetadata({ codexHome, run })).resolves.toEqual([
+      {
+        id: "catalog-match",
+        cwd: "/root/catalog-match",
+        cwdCandidates: ["/root/catalog-match", "/catalog-match"],
+        name: "Catalog match",
+        recencyAt: 1_784_031_863_000,
+        updatedAt: 1_784_025_639_000,
+      },
+      {
+        id: "current",
+        cwd: "/root/stale",
+        cwdCandidates: ["/root/stale", "/repo/current"],
+        name: "Current Desktop session",
+        recencyAt: 1_784_031_863_000,
+        updatedAt: 1_784_025_639_000,
+      },
+    ]);
+  });
+
+  it("prefers the root layout when same-version databases have equal freshness", async () => {
+    const codexHome = await mkdtemp(path.join(os.tmpdir(), "codex-metadata-root-tie-"));
+    temporaryDirectories.push(codexHome);
+    const legacyDirectory = path.join(codexHome, "sqlite");
+    const rootState = path.join(codexHome, "state_5.sqlite");
+    const legacyState = path.join(legacyDirectory, "state_5.sqlite");
+    await mkdir(legacyDirectory);
+    await Promise.all([writeFile(rootState, "fixture"), writeFile(legacyState, "fixture")]);
+
+    const run: ProcessRunner = async (_executable, args) => {
+      const databasePath = args[4] ?? "";
+      if (databasePath.endsWith("codex-dev.db")) {
+        return { stdout: "[]", stderr: "" };
+      }
+      if (databasePath === rootState) {
+        return { stdout: JSON.stringify([stateRow({ cwd: "/root" })]), stderr: "" };
+      }
+      if (databasePath === legacyState) {
+        return { stdout: JSON.stringify([stateRow({ cwd: "/legacy" })]), stderr: "" };
+      }
+      throw new Error("unexpected database");
+    };
+
+    const result = await listCodexThreadMetadata({ codexHome, run });
+
+    expect(result[0]?.cwd).toBe("/root");
+  });
+
   it("probes the legacy layout when no state database can be discovered", async () => {
     const warnings: string[] = [];
     const run = vi.fn<ProcessRunner>(async (_executable, args) => {
@@ -204,10 +325,21 @@ describe("listCodexThreadMetadata", () => {
       }),
     ).resolves.toHaveLength(1);
     expect(run.mock.calls.some(([, args]) => args[5]?.includes('updated_at AS "recencyAt"'))).toBe(true);
+    const legacyQueries = run.mock.calls
+      .filter(([, args]) => args[4] === "/codex/sqlite/state_5.sqlite")
+      .map(([, args]) => args[5]);
+    expect(legacyQueries).toHaveLength(3);
+    expect(
+      legacyQueries.every(
+        (query) =>
+          query?.includes("WHERE archived = 0") &&
+          query.includes("source IN ('cli', 'vscode', 'exec', 'appServer', 'unknown')"),
+      ),
+    ).toBe(true);
     expect(warnings).toEqual([]);
   });
 
-  it("does not revive archived sessions from lower-version or legacy snapshots", async () => {
+  it("falls back to a compatible legacy database when discovered root databases cannot be read", async () => {
     const codexHome = await mkdtemp(path.join(os.tmpdir(), "codex-metadata-layout-"));
     temporaryDirectories.push(codexHome);
     const legacyDirectory = path.join(codexHome, "sqlite");
@@ -230,7 +362,10 @@ describe("listCodexThreadMetadata", () => {
       if (databasePath === rootState) {
         throw new Error("root database unreadable");
       }
-      if (databasePath === lowerRootState || databasePath === legacyState) {
+      if (databasePath === lowerRootState) {
+        throw new Error("root database schema incompatible");
+      }
+      if (databasePath === legacyState) {
         return { stdout: JSON.stringify([stateRow()]), stderr: "" };
       }
       throw new Error("unexpected database");
@@ -242,7 +377,7 @@ describe("listCodexThreadMetadata", () => {
         run,
         onMetadataWarning: (warning) => warnings.push(warning),
       }),
-    ).rejects.toThrow("Could not read Codex Desktop thread metadata");
+    ).resolves.toHaveLength(1);
     expect(warnings).toEqual([]);
   });
 
