@@ -8,9 +8,7 @@
 /* eslint-disable @typescript-eslint/ban-types */
 
 type ExtensionPreferences = {
-  /** Codex CLI - Absolute path to the Codex CLI executable. */
-  "codexExecutable": string,
-  /** Codex Home - Directory containing Codex sessions and state. */
+  /** Codex Home - Directory containing Codex Desktop metadata. */
   "codexHome": string,
   /** Zed App - Zed application to use when opening a worktree. */
   "zedApp"?: import("@raycast/api").Application

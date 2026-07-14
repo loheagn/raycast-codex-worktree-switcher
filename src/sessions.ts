@@ -1,47 +1,59 @@
 // SPDX-FileCopyrightText: 2026 loheagn <loheagn@icloud.com>
 // SPDX-License-Identifier: MIT
 
-import type { ThreadSummary } from "./codex-app-server";
-import type { LinkedWorktree } from "./worktrees";
+import path from "node:path";
+
+import type { ThreadSummary } from "./codex-desktop";
+import type { GitWorktree } from "./worktrees";
 
 export interface WorktreeSession {
   id: string;
+  lastActiveAt: number;
   title: string;
-  preview: string;
   sourceCwd: string;
-  updatedAt: number;
-  worktree: LinkedWorktree;
+  worktree: GitWorktree;
 }
 
-export function sessionDisplayName(thread: Pick<ThreadSummary, "name" | "preview">): string {
-  return thread.name?.trim() || thread.preview.trim() || "Untitled Codex Session";
+export function sessionDisplayName(thread: Pick<ThreadSummary, "name">): string {
+  return thread.name?.trim() || "Untitled Codex Session";
 }
 
 export function buildWorktreeSessions(
   threads: readonly ThreadSummary[],
-  worktreesByCwd: ReadonlyMap<string, LinkedWorktree | null>,
+  worktreesByCwd: ReadonlyMap<string, GitWorktree | null>,
 ): WorktreeSession[] {
   return threads
     .flatMap((thread) => {
-      const worktree = worktreesByCwd.get(thread.cwd);
-      if (!worktree) {
+      const match = threadCwdCandidates(thread)
+        .map((cwd) => ({ cwd, worktree: worktreesByCwd.get(cwd) }))
+        .find((candidate): candidate is { cwd: string; worktree: GitWorktree } => Boolean(candidate.worktree));
+      if (!match) {
         return [];
       }
 
       return [
         {
           id: thread.id,
-          preview: thread.preview,
-          sourceCwd: thread.cwd,
+          lastActiveAt: thread.recencyAt ?? thread.updatedAt,
+          sourceCwd: match.cwd,
           title: sessionDisplayName(thread),
-          updatedAt: thread.updatedAt,
-          worktree,
+          worktree: match.worktree,
         },
       ];
     })
-    .sort((left, right) => right.updatedAt - left.updatedAt);
+    .sort((left, right) => right.lastActiveAt - left.lastActiveAt);
 }
 
-export function threadUpdatedAtDate(updatedAt: number): Date {
-  return new Date(updatedAt < 10_000_000_000 ? updatedAt * 1_000 : updatedAt);
+export function threadCwdCandidates(thread: Pick<ThreadSummary, "cwd" | "cwdCandidates">): string[] {
+  return [
+    ...new Set(
+      [...(thread.cwdCandidates ?? []), thread.cwd]
+        .filter((cwd) => cwd.trim().length > 0)
+        .filter((cwd) => path.isAbsolute(cwd) && path.normalize(cwd) !== path.parse(cwd).root),
+    ),
+  ];
+}
+
+export function threadActivityDate(lastActiveAt: number): Date {
+  return new Date(lastActiveAt < 10_000_000_000 ? lastActiveAt * 1_000 : lastActiveAt);
 }

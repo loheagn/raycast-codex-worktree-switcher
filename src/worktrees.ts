@@ -9,13 +9,14 @@ import { type ProcessRunner, runProcess } from "./process";
 const GIT_EXECUTABLE = "/usr/bin/git";
 const GIT_TIMEOUT_MS = 3_000;
 
-export interface LinkedWorktree {
+export interface GitWorktree {
   worktreeRoot: string;
   gitDir: string;
   commonDir: string;
   repositoryRoot: string;
   repositoryName: string;
   worktreeName: string;
+  kind: "main" | "linked";
 }
 
 export interface WorktreeValidationOptions {
@@ -25,7 +26,7 @@ export interface WorktreeValidationOptions {
 
 export interface WorktreeBatchOptions extends WorktreeValidationOptions {
   concurrency?: number;
-  validate?: (cwd: string) => Promise<LinkedWorktree | null>;
+  validate?: (cwd: string) => Promise<GitWorktree | null>;
 }
 
 async function isDirectory(directory: string): Promise<boolean> {
@@ -40,10 +41,10 @@ function repositoryRootFor(commonDir: string): string {
   return path.basename(commonDir) === ".git" ? path.dirname(commonDir) : commonDir;
 }
 
-export async function validateLinkedWorktree(
+export async function validateGitWorktree(
   cwd: string,
   options: WorktreeValidationOptions = {},
-): Promise<LinkedWorktree | null> {
+): Promise<GitWorktree | null> {
   if (!cwd || !(await isDirectory(cwd))) {
     return null;
   }
@@ -64,33 +65,34 @@ export async function validateLinkedWorktree(
       realpath(rawGitDir),
       realpath(rawCommonDir),
     ]);
-    if (gitDir === commonDir || !(await isDirectory(worktreeRoot))) {
+    if (!(await isDirectory(worktreeRoot))) {
       return null;
     }
 
-    const repositoryRoot = repositoryRootFor(commonDir);
+    const kind = gitDir === commonDir ? "main" : "linked";
+    const repositoryRoot = kind === "main" ? worktreeRoot : repositoryRootFor(commonDir);
     return {
       worktreeRoot,
       gitDir,
       commonDir,
       repositoryRoot,
       repositoryName: path.basename(repositoryRoot),
-      worktreeName: path.basename(worktreeRoot),
+      worktreeName: kind === "main" ? "Local" : path.basename(worktreeRoot),
+      kind,
     };
   } catch {
     return null;
   }
 }
 
-export async function validateLinkedWorktrees(
+export async function validateGitWorktrees(
   cwds: Iterable<string>,
   options: WorktreeBatchOptions = {},
-): Promise<Map<string, LinkedWorktree | null>> {
+): Promise<Map<string, GitWorktree | null>> {
   const uniqueCwds = [...new Set(cwds)];
-  const results = new Map<string, LinkedWorktree | null>();
+  const results = new Map<string, GitWorktree | null>();
   const validate =
-    options.validate ??
-    ((cwd: string) => validateLinkedWorktree(cwd, { run: options.run, timeoutMs: options.timeoutMs }));
+    options.validate ?? ((cwd: string) => validateGitWorktree(cwd, { run: options.run, timeoutMs: options.timeoutMs }));
   const concurrency = Math.max(1, Math.min(options.concurrency ?? 8, uniqueCwds.length || 1));
   let nextIndex = 0;
 
