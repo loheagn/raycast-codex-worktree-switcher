@@ -1,23 +1,20 @@
 // SPDX-FileCopyrightText: 2026 loheagn <loheagn@icloud.com>
 // SPDX-License-Identifier: MIT
 
-import { constants } from "node:fs";
-import { access } from "node:fs/promises";
-import path from "node:path";
+import {
+  editorCliCandidates,
+  type EditorOpenMode,
+  type OpenEditorOptions,
+  openWorktreeInEditor,
+  type ResolveEditorOptions,
+  resolveEditorCli,
+} from "./editors";
 
-import { type ProcessRunner, runProcess } from "./process";
+export type ZedOpenMode = EditorOpenMode;
 
-export type ZedOpenMode = "existing" | "new";
+export type ResolveZedOptions = ResolveEditorOptions;
 
-export interface ResolveZedOptions {
-  canExecute?: (file: string) => Promise<boolean>;
-  fallbackPaths?: readonly string[];
-}
-
-export interface OpenZedOptions {
-  run?: ProcessRunner;
-  timeoutMs?: number;
-}
+export type OpenZedOptions = OpenEditorOptions;
 
 const DEFAULT_FALLBACK_PATHS = [
   "/opt/homebrew/bin/zed",
@@ -25,34 +22,18 @@ const DEFAULT_FALLBACK_PATHS = [
   "/Applications/Zed.app/Contents/MacOS/cli",
 ] as const;
 
-async function isExecutable(file: string): Promise<boolean> {
-  try {
-    await access(file, constants.X_OK);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 export function zedCliCandidates(
   applicationPath?: string,
   fallbackPaths: readonly string[] = DEFAULT_FALLBACK_PATHS,
 ): string[] {
-  const candidates = applicationPath
-    ? [path.join(applicationPath, "Contents", "MacOS", "cli"), ...fallbackPaths]
-    : [...fallbackPaths];
-  return [...new Set(candidates)];
+  return editorCliCandidates("zed", applicationPath, fallbackPaths);
 }
 
 export async function resolveZedCli(applicationPath?: string, options: ResolveZedOptions = {}): Promise<string> {
-  const canExecute = options.canExecute ?? isExecutable;
-  for (const candidate of zedCliCandidates(applicationPath, options.fallbackPaths ?? DEFAULT_FALLBACK_PATHS)) {
-    if (await canExecute(candidate)) {
-      return candidate;
-    }
-  }
-
-  throw new Error("找不到可执行的 Zed CLI。请在扩展偏好中重新选择 Zed App。");
+  return resolveEditorCli("zed", applicationPath, {
+    ...options,
+    fallbackPaths: options.fallbackPaths ?? DEFAULT_FALLBACK_PATHS,
+  });
 }
 
 export async function openWorktreeInZed(
@@ -61,7 +42,5 @@ export async function openWorktreeInZed(
   mode: ZedOpenMode,
   options: OpenZedOptions = {},
 ): Promise<void> {
-  await (options.run ?? runProcess)(zedCli, [mode === "existing" ? "--existing" : "--new", worktreePath], {
-    timeoutMs: options.timeoutMs ?? 15_000,
-  });
+  await openWorktreeInEditor("zed", zedCli, worktreePath, mode, options);
 }

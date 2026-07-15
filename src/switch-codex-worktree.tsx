@@ -17,13 +17,27 @@ import {
 import { usePromise } from "@raycast/utils";
 
 import { listCodexThreadMetadata } from "./codex-desktop";
+import { editorName, type EditorId, type EditorOpenMode, openWorktreeInEditor, resolveEditorCli } from "./editors";
 import { buildWorktreeSessions, type WorktreeSession, threadActivityDate, threadCwdCandidates } from "./sessions";
 import { validateGitWorktree, validateGitWorktrees } from "./worktrees";
-import { openWorktreeInZed, resolveZedCli, type ZedOpenMode } from "./zed";
 
 interface Preferences {
   codexHome: string;
+  defaultEditor?: EditorId;
   zedApp?: Application;
+  vscodeApp?: Application;
+  vscodeInsidersApp?: Application;
+}
+
+function editorApplicationPath(preferences: Preferences, editor: EditorId): string | undefined {
+  switch (editor) {
+    case "zed":
+      return preferences.zedApp?.path;
+    case "vscode":
+      return preferences.vscodeApp?.path;
+    case "vscode-insiders":
+      return preferences.vscodeInsidersApp?.path;
+  }
 }
 
 async function loadWorktreeSessions(codexHome: string): Promise<WorktreeSession[]> {
@@ -49,6 +63,8 @@ function errorMessage(error: unknown): string {
 
 export default function Command() {
   const preferences = getPreferenceValues<Preferences>();
+  const defaultEditor = preferences.defaultEditor ?? "zed";
+  const defaultEditorName = editorName(defaultEditor);
   const { data, error, isLoading, revalidate } = usePromise(loadWorktreeSessions, [preferences.codexHome]);
   const sessions = data ?? [];
 
@@ -64,10 +80,13 @@ export default function Command() {
     }
   }
 
-  async function openSession(session: WorktreeSession, mode: ZedOpenMode): Promise<void> {
+  async function openSession(session: WorktreeSession, mode: EditorOpenMode): Promise<void> {
     const toast = await showToast({
       style: Toast.Style.Animated,
-      title: mode === "existing" ? "正在切换 Zed Git Checkout" : "正在新窗口打开 Git Checkout",
+      title:
+        mode === "existing"
+          ? `正在切换 ${defaultEditorName} Git Checkout`
+          : `正在新的 ${defaultEditorName} 窗口打开 Git Checkout`,
     });
 
     try {
@@ -76,15 +95,18 @@ export default function Command() {
         throw new Error("目录已删除、失效或不再是 Git checkout");
       }
 
-      const zedCli = await resolveZedCli(preferences.zedApp?.path);
-      await openWorktreeInZed(zedCli, currentWorktree.worktreeRoot, mode);
+      const editorCli = await resolveEditorCli(defaultEditor, editorApplicationPath(preferences, defaultEditor));
+      await openWorktreeInEditor(defaultEditor, editorCli, currentWorktree.worktreeRoot, mode);
       toast.style = Toast.Style.Success;
-      toast.title = mode === "existing" ? "已在 Zed 中切换 Git Checkout" : "已在新 Zed 窗口打开 Git Checkout";
+      toast.title =
+        mode === "existing"
+          ? `已在 ${defaultEditorName} 中切换 Git Checkout`
+          : `已在新的 ${defaultEditorName} 窗口打开 Git Checkout`;
       toast.message = currentWorktree.worktreeRoot;
       await closeMainWindow();
     } catch (openError) {
       toast.style = Toast.Style.Failure;
-      toast.title = "无法打开 Git Checkout";
+      toast.title = `无法在 ${defaultEditorName} 中打开 Git Checkout`;
       toast.message = errorMessage(openError);
       await refresh();
     }
@@ -126,12 +148,12 @@ export default function Command() {
             <ActionPanel>
               <ActionPanel.Section>
                 <Action
-                  title="Open in Existing Zed Window"
+                  title={`Open in Existing ${defaultEditorName} Window`}
                   icon={Icon.AppWindow}
                   onAction={() => openSession(session, "existing")}
                 />
                 <Action
-                  title="Open in New Zed Window"
+                  title={`Open in New ${defaultEditorName} Window`}
                   icon={Icon.NewFolder}
                   onAction={() => openSession(session, "new")}
                 />

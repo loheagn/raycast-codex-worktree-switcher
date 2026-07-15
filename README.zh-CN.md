@@ -9,19 +9,19 @@ SPDX-License-Identifier: MIT
 
 [English](README.md) | 简体中文
 
-一个本地优先的 macOS Raycast 扩展，用于查找 Codex Desktop 会话，并在 Zed 中打开对应的 Git checkout。
+一个本地优先的 macOS Raycast 扩展，用于查找 Codex Desktop 会话，并在 Zed、Visual Studio Code 或 Visual Studio Code Insiders 中打开对应的 Git checkout。
 
 ![使用虚构会话数据展示的 Codex Worktree Switcher](media/screenshot.jpg)
 
 > [!NOTE]
-> 这是非官方社区项目，与 OpenAI、Raycast 和 Zed Industries 没有关联，也未获得这些公司的背书。
+> 这是非官方社区项目，与 OpenAI、Raycast、Zed Industries 和 Microsoft 没有关联，也未获得这些公司的背书。
 
 ## 功能
 
 - 按最近活跃时间列出本机未归档的 Codex Desktop 会话。
 - 展示会话标题与 `仓库 › 分支`；detached checkout 显示为 `Detached · <提交>`。
 - 支持按会话标题、仓库、分支、提交标识和路径搜索。
-- 默认在现有 Zed 窗口打开 checkout，也可以在新窗口打开。
+- 在所配置编辑器的现有窗口或新窗口中打开 checkout。
 - 支持复制 checkout 路径、在 Finder 中显示和手动刷新。
 - 即使多个 Codex 会话共用同一 checkout，也会保留为独立条目。
 
@@ -30,7 +30,7 @@ SPDX-License-Identifier: MIT
 - macOS
 - [Raycast](https://www.raycast.com/)
 - Codex Desktop
-- [Zed](https://zed.dev/)
+- 至少安装一种受支持的编辑器：[Zed](https://zed.dev/)、[Visual Studio Code](https://code.visualstudio.com/) 或 [Visual Studio Code Insiders](https://code.visualstudio.com/insiders/)
 - Git 与系统 SQLite CLI
 - 从源码安装时需要 Node.js 22.22.2 或更高版本及 npm
 
@@ -54,14 +54,17 @@ Raycast 显示扩展就绪后，打开 Raycast 并运行 **Switch Codex Worktree
 - 有分支：`仓库 › feature/branch-name`
 - detached：`仓库 › Detached · 398aecb5`
 
-默认 Action 执行 `zed --existing <checkout>`。其他 Action 可以在新 Zed 窗口打开、复制路径、在 Finder 中显示、刷新列表或打开扩展偏好设置。
+默认 Action 会在所配置编辑器的现有窗口中打开 checkout，另一个 Action 会在新窗口中打开。Zed 使用 `--existing`/`--new`，VS Code 和 VS Code Insiders 使用 `--reuse-window`/`--new-window`。其他 Action 可以复制路径、在 Finder 中显示、刷新列表或打开扩展偏好设置。
 
 ## 偏好设置
 
-| 偏好       | 默认值        | 用途                         |
-| ---------- | ------------- | ---------------------------- |
-| Codex Home | `~/.codex`    | Codex Desktop 元数据所在目录 |
-| Zed App    | `dev.zed.Zed` | 用于定位内置 CLI 的 Zed 应用 |
+| 偏好                 | 默认值                         | 用途                                    |
+| -------------------- | ------------------------------ | --------------------------------------- |
+| Codex Home           | `~/.codex`                     | Codex Desktop 元数据所在目录            |
+| Default Editor       | Zed                            | 现有窗口与新窗口 Action 使用的编辑器    |
+| Zed App              | `dev.zed.Zed`                  | 用于定位内置 CLI 的 Zed 应用            |
+| VS Code App          | `com.microsoft.VSCode`         | 用于定位 CLI 的 Visual Studio Code 应用 |
+| VS Code Insiders App | `com.microsoft.VSCodeInsiders` | 用于定位 CLI 的 VS Code Insiders 应用   |
 
 ## 隐私与安全
 
@@ -74,7 +77,7 @@ Raycast 显示扩展就绪后，打开 Raycast 并运行 **Switch Codex Worktree
 
 Codex SQLite 数据库通过 `/usr/bin/sqlite3` 打开，同时启用 `-readonly` 和 `PRAGMA query_only`。扩展不会查询 `preview`、`first_user_message`、rollout 路径、JSONL 或会话正文，也不会启动 Codex App Server、上传数据或创建缓存与会话历史。
 
-每个 checkout 在展示前会通过 `/usr/bin/git` 验证，在打开 Zed 前会再次验证。所有外部命令均通过参数数组调用，并禁用 shell 执行。
+每个 checkout 在展示前会通过 `/usr/bin/git` 验证，在打开编辑器前会再次验证。所有外部命令均通过参数数组调用，并禁用 shell 执行。
 
 安全问题请根据 [SECURITY.md](SECURITY.md) 私下报告。
 
@@ -102,7 +105,7 @@ Codex SQLite 数据库通过 `/usr/bin/sqlite3` 打开，同时启用 `-readonly
    /usr/bin/git -C /path/to/repository worktree list
    ```
 
-扩展优先选择存在兼容候选的最高状态库版本；在该版本内，可读的根目录状态库具有权威性。只有该版本没有可读的根目录候选时，才会使用兼容的 legacy 状态库；如果没有可验证的候选，则停止加载并报错。如果无法打开 Zed，请在扩展偏好中重新选择 Zed 应用。
+扩展优先选择存在兼容候选的最高状态库版本；在该版本内，可读的根目录状态库具有权威性。只有该版本没有可读的根目录候选时，才会使用兼容的 legacy 状态库；如果没有可验证的候选，则停止加载并报错。如果无法打开所选编辑器，请在扩展偏好中重新选择对应应用。
 
 ## 已知限制
 
@@ -110,7 +113,7 @@ Codex SQLite 数据库通过 `/usr/bin/sqlite3` 打开，同时启用 `-readonly
 - legacy 元数据可能早于根目录状态库，因此只会在所选 schema 版本没有可读根目录候选时使用。
 - Desktop 元数据库不包含 active/idle 状态，因此无法准确显示“工作中”标识。
 - 扩展不会创建、修复、恢复、归档或删除 worktree 和 Codex 会话。
-- 这是 Raycast 浮层命令，不是 Zed 内部常驻侧边栏。
+- 这是 Raycast 浮层命令，不是编辑器内部常驻侧边栏。
 
 ## 开发
 

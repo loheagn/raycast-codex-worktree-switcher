@@ -19,4 +19,4 @@ If private reporting is unavailable, email `loheagn@icloud.com` with a minimal d
 
 ## Security model
 
-The extension reads a small set of local Codex Desktop metadata fields with SQLite read-only mode, validates local Git checkouts, and invokes Zed with an argument array. It does not make network requests, start Codex App Server, or persist conversation data.
+The extension reads a small set of local Codex Desktop metadata fields with SQLite read-only mode, validates local Git checkouts, and invokes the configured editor with an argument array. It does not make network requests, start Codex App Server, or persist conversation data.

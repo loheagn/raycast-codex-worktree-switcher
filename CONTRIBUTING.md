@@ -9,7 +9,7 @@ Thanks for considering a contribution to Codex Worktree Switcher.
 
 ## Development setup
 
-You need macOS, Raycast, Zed, Codex Desktop, Git, SQLite, Node.js 22.22.2 or newer, and npm.
+You need macOS, Raycast, Codex Desktop, at least one supported editor (Zed, Visual Studio Code, or Visual Studio Code Insiders), Git, SQLite, Node.js 22.22.2 or newer, and npm.
 
 ```bash
 git clone https://github.com/loheagn/raycast-codex-worktree-switcher.git
