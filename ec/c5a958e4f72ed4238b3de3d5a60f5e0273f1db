@@ -1,0 +1,50 @@
+src/codex-desktop.ts
+  s_7e40783b82e9c0::t_6f92c133ba149b 139
+  s_7e40783b82e9c0::t_c6e3385a1b40bb 11,14,16,122-138,140-142
+  s_f6f0b237284aaa::t_5021e754064078 143
+CHANGELOG.md
+  s_7e40783b82e9c0::t_884d03ea959a63 8-11,15,26
+src/switch-codex-worktree.tsx
+  s_7e40783b82e9c0::t_0f33a1d9f43df5 20,105,123-126
+  s_7e40783b82e9c0::t_6f92c133ba149b 22,101-102,104,106-108,111-112,115-117,121-122
+  s_7e40783b82e9c0::t_6a11ee50571223 14,109,113,118
+tests/codex-desktop.test.ts
+  s_7e40783b82e9c0::t_9714a02948b059 10,44-51,55-67,69-80,99-105
+  s_7e40783b82e9c0::t_a43c8870412bc4 53-54
+  s_7e40783b82e9c0::t_6f92c133ba149b 52,68
+  s_7e40783b82e9c0::t_6f22fa75a6c555 81-86,91,98
+  s_7e40783b82e9c0::t_85d40e76785421 87-90,92-97
+  s_7e40783b82e9c0::t_1a7617db4b6424 106
+tests/session-opener.test.ts
+  s_7e40783b82e9c0::t_6f92c133ba149b 1-57
+README.md
+  s_7e40783b82e9c0::t_cf67c76b60d65d 83-84,118
+README.zh-CN.md
+  s_7e40783b82e9c0::t_cf67c76b60d65d 83-84,118
+src/session-opener.ts
+  s_7e40783b82e9c0::t_6f92c133ba149b 1-40
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "ecc5a958e4f72ed4238b3de3d5a60f5e0273f1db",
+  "prompts": {},
+  "sessions": {
+    "s_7e40783b82e9c0": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f63fc-8be5-7ef3-b888-76b96fb29e9c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "loheagn <loheagn@icloud.com>"
+    },
+    "s_f6f0b237284aaa": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f6404-a2ad-7873-af27-24eb04698bc2",
+        "model": "gpt-5.4"
+      },
+      "human_author": "loheagn <loheagn@icloud.com>"
+    }
+  }
+}
