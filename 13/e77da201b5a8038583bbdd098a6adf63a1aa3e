@@ -1,0 +1,48 @@
+README.md
+  s_1f64ef2a9f290e::t_142fe8be6c4a2d 12,17,24,33,57,67,80,108,116
+  s_1f64ef2a9f290e::t_40f60289e5e995 61-66
+SECURITY.md
+  s_1f64ef2a9f290e::t_142fe8be6c4a2d 22
+src/editors.ts
+  s_1f64ef2a9f290e::t_40f60289e5e995 35,81-83
+  s_1f64ef2a9f290e::t_c82a9c5c9adbfa 1-34,36-80,84-115
+raycast-env.d.ts
+  s_1f64ef2a9f290e::t_34ae9f68136427 13-14,16-20
+package.json
+  s_1f64ef2a9f290e::t_bba53f0c969301 68
+  s_1f64ef2a9f290e::t_014aad5c18694f 4,22,38,44,62-67,69-83,90-106
+README.zh-CN.md
+  s_1f64ef2a9f290e::t_142fe8be6c4a2d 12,17,24,33,57,80,108,116
+  s_1f64ef2a9f290e::t_40f60289e5e995 61-67
+tests/editors.test.ts
+  s_1f64ef2a9f290e::t_c82a9c5c9adbfa 1-5,7-28,33-34,36-80
+  s_1f64ef2a9f290e::t_40f60289e5e995 6
+  s_1f64ef2a9f290e::t_014aad5c18694f 29-32,35
+src/zed.ts
+  s_1f64ef2a9f290e::t_c82a9c5c9adbfa 4-11,13,15,17,29,33-36,45
+src/switch-codex-worktree.tsx
+  s_1f64ef2a9f290e::t_c9e975e1695a75 109
+  s_1f64ef2a9f290e::t_40f60289e5e995 20
+  s_1f64ef2a9f290e::t_014aad5c18694f 26,28-40,66-67,83,86-89,98-99,101-104,151,156
+CONTRIBUTING.md
+  s_1f64ef2a9f290e::t_142fe8be6c4a2d 12
+CHANGELOG.md
+  s_1f64ef2a9f290e::t_c9e975e1695a75 25
+  s_1f64ef2a9f290e::t_142fe8be6c4a2d 8-14
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "13e77da201b5a8038583bbdd098a6adf63a1aa3e",
+  "prompts": {},
+  "sessions": {
+    "s_1f64ef2a9f290e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f63d5-4520-7bb1-86ba-d131bebd2aee",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "loheagn <loheagn@icloud.com>"
+    }
+  }
+}
