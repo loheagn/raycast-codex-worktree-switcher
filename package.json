@@ -1,7 +1,7 @@
 {
   "name": "codex-worktree-switcher",
   "title": "Codex Worktree Switcher",
-  "description": "Switch Zed to the local Git checkout for a Codex session",
+  "description": "Open the local Git checkout for a Codex session in your preferred editor",
   "icon": "icon.png",
   "author": "loheagn",
   "license": "MIT",
@@ -19,6 +19,7 @@
     "raycast-extension",
     "codex",
     "zed",
+    "vscode",
     "git-worktree",
     "macos"
   ],
@@ -34,12 +35,13 @@
       "name": "switch-codex-worktree",
       "title": "Switch Codex Worktree",
       "subtitle": "Codex Worktree Switcher",
-      "description": "Open the local Git checkout for a Codex session in Zed",
+      "description": "Open the local Git checkout for a Codex session in Zed or VS Code",
       "mode": "view",
       "icon": "icon.png",
       "keywords": [
         "codex",
         "zed",
+        "vscode",
         "worktree",
         "session",
         "conversation",
@@ -58,12 +60,50 @@
       "required": true
     },
     {
+      "name": "defaultEditor",
+      "title": "Default Editor",
+      "description": "Editor used by the open actions.",
+      "type": "dropdown",
+      "default": "zed",
+      "required": false,
+      "data": [
+        {
+          "title": "Zed",
+          "value": "zed"
+        },
+        {
+          "title": "Visual Studio Code",
+          "value": "vscode"
+        },
+        {
+          "title": "Visual Studio Code Insiders",
+          "value": "vscode-insiders"
+        }
+      ]
+    },
+    {
       "name": "zedApp",
       "title": "Zed App",
       "description": "Zed application to use when opening a worktree.",
       "type": "appPicker",
       "default": "dev.zed.Zed",
-      "required": true
+      "required": false
+    },
+    {
+      "name": "vscodeApp",
+      "title": "VS Code App",
+      "description": "Visual Studio Code application to use when opening a worktree.",
+      "type": "appPicker",
+      "default": "com.microsoft.VSCode",
+      "required": false
+    },
+    {
+      "name": "vscodeInsidersApp",
+      "title": "VS Code Insiders App",
+      "description": "Visual Studio Code Insiders application to use when opening a worktree.",
+      "type": "appPicker",
+      "default": "com.microsoft.VSCodeInsiders",
+      "required": false
     }
   ],
   "scripts": {
