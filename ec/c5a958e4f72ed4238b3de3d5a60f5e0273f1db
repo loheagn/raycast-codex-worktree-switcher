@@ -4,10 +4,12 @@ src/codex-desktop.ts
   s_f6f0b237284aaa::t_5021e754064078 143
 CHANGELOG.md
   s_7e40783b82e9c0::t_884d03ea959a63 8-11,15,26
+  s_7e40783b82e9c0::t_e79047884078e7 14
 src/switch-codex-worktree.tsx
   s_7e40783b82e9c0::t_0f33a1d9f43df5 20,105,123-126
   s_7e40783b82e9c0::t_6f92c133ba149b 22,101-102,104,106-108,111-112,115-117,121-122
   s_7e40783b82e9c0::t_6a11ee50571223 14,109,113,118
+  s_7e40783b82e9c0::t_e79047884078e7 90-91,103,110,114,119-120,130-131,136
 tests/codex-desktop.test.ts
   s_7e40783b82e9c0::t_9714a02948b059 10,44-51,55-67,69-80,99-105
   s_7e40783b82e9c0::t_a43c8870412bc4 53-54
@@ -19,10 +21,16 @@ tests/session-opener.test.ts
   s_7e40783b82e9c0::t_6f92c133ba149b 1-57
 README.md
   s_7e40783b82e9c0::t_cf67c76b60d65d 83-84,118
+  s_7e40783b82e9c0::t_e79047884078e7 12,24,58
 README.zh-CN.md
   s_7e40783b82e9c0::t_cf67c76b60d65d 83-84,118
+  s_7e40783b82e9c0::t_e79047884078e7 12,24,58
 src/session-opener.ts
   s_7e40783b82e9c0::t_6f92c133ba149b 1-40
+SECURITY.md
+  s_7e40783b82e9c0::t_e79047884078e7 22
+package.json
+  s_7e40783b82e9c0::t_e79047884078e7 4,38
 ---
 {
   "schema_version": "authorship/3.0.0",
