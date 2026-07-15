@@ -1,7 +1,7 @@
 {
   "name": "codex-worktree-switcher",
   "title": "Codex Worktree Switcher",
-  "description": "Open the local Git checkout for a Codex session in your preferred editor",
+  "description": "Switch Codex Desktop and your preferred editor to the selected local session",
   "icon": "icon.png",
   "author": "loheagn",
   "license": "MIT",
@@ -35,7 +35,7 @@
       "name": "switch-codex-worktree",
       "title": "Switch Codex Worktree",
       "subtitle": "Codex Worktree Switcher",
-      "description": "Open the local Git checkout for a Codex session in Zed or VS Code",
+      "description": "Open a Codex session and its Git checkout in your preferred editor",
       "mode": "view",
       "icon": "icon.png",
       "keywords": [

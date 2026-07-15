@@ -8,9 +8,12 @@ import path from "node:path";
 import { type ProcessRunner, runProcess } from "./process";
 
 const SQLITE_EXECUTABLE = "/usr/bin/sqlite3";
+const OPEN_EXECUTABLE = "/usr/bin/open";
 const DATABASE_TIMEOUT_MS = 5_000;
 const DATABASE_MAX_BUFFER = 8 * 1024 * 1024;
+const OPEN_TIMEOUT_MS = 5_000;
 const STANDARD_THREAD_SOURCES = new Set(["cli", "vscode", "exec", "appServer", "unknown"]);
+const THREAD_ID_PATTERN = /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
 
 const CATALOG_QUERY = `
 PRAGMA query_only = ON;
@@ -114,6 +117,28 @@ export interface ListCodexThreadMetadataOptions {
   catalogDatabasePath?: string;
   stateDatabasePath?: string;
   onMetadataWarning?: (warning: string) => void;
+}
+
+export interface OpenCodexThreadOptions {
+  run?: ProcessRunner;
+  openExecutable?: string;
+  timeoutMs?: number;
+}
+
+export function codexThreadDeepLink(threadId: string): string {
+  const normalizedThreadId = threadId.trim();
+  if (!THREAD_ID_PATTERN.test(normalizedThreadId)) {
+    throw new Error("Codex 会话 ID 无效，无法打开桌面会话");
+  }
+  return `codex://threads/${encodeURIComponent(normalizedThreadId)}`;
+}
+
+export async function openCodexThread(threadId: string, options: OpenCodexThreadOptions = {}): Promise<void> {
+  await (options.run ?? runProcess)(
+    options.openExecutable ?? OPEN_EXECUTABLE,
+    ["-g", "-u", codexThreadDeepLink(threadId)],
+    { timeoutMs: positiveTimeout(options.timeoutMs, OPEN_TIMEOUT_MS) },
+  );
 }
 
 export async function listCodexThreadMetadata(options: ListCodexThreadMetadataOptions): Promise<ThreadSummary[]> {

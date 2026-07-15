@@ -7,7 +7,7 @@ import path from "node:path";
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { listCodexThreadMetadata } from "../src/codex-desktop";
+import { codexThreadDeepLink, listCodexThreadMetadata, openCodexThread } from "../src/codex-desktop";
 import type { ProcessRunner } from "../src/process";
 
 const temporaryDirectories: string[] = [];
@@ -40,6 +40,69 @@ function stateRow(overrides: Record<string, unknown> = {}): Record<string, unkno
     ...overrides,
   };
 }
+
+describe("openCodexThread", () => {
+  it("opens the canonical task deep link in the background", async () => {
+    const run = vi.fn<ProcessRunner>().mockResolvedValue({ stdout: "", stderr: "" });
+    const threadId = "019f63fc-8be5-7ef3-b888-76b96fb29e9c";
+
+    await openCodexThread(threadId, { run });
+
+    expect(run).toHaveBeenCalledOnce();
+    expect(run).toHaveBeenCalledWith("/usr/bin/open", ["-g", "-u", `codex://threads/${threadId}`], {
+      timeoutMs: 5_000,
+    });
+  });
+
+  it("supports an explicit opener and timeout", async () => {
+    const run = vi.fn<ProcessRunner>().mockResolvedValue({ stdout: "", stderr: "" });
+
+    await openCodexThread("019f63fc-8be5-7ef3-b888-76b96fb29e9c", {
+      openExecutable: "/custom/open",
+      run,
+      timeoutMs: 2_000,
+    });
+
+    expect(run).toHaveBeenCalledWith(
+      "/custom/open",
+      ["-g", "-u", "codex://threads/019f63fc-8be5-7ef3-b888-76b96fb29e9c"],
+      { timeoutMs: 2_000 },
+    );
+  });
+
+  it("rejects invalid task IDs before invoking an external process", async () => {
+    const run = vi.fn<ProcessRunner>().mockResolvedValue({ stdout: "", stderr: "" });
+
+    expect(() => codexThreadDeepLink("../../settings")).toThrow("Codex 会话 ID 无效");
+    await expect(openCodexThread("not-a-thread", { run })).rejects.toThrow("Codex 会话 ID 无效");
+    expect(run).not.toHaveBeenCalled();
+  });
+
+  it("normalizes surrounding whitespace in a valid task ID", () => {
+    expect(codexThreadDeepLink(" \n019f63fc-8be5-7ef3-b888-76b96fb29e9c\t")).toBe(
+      "codex://threads/019f63fc-8be5-7ef3-b888-76b96fb29e9c",
+    );
+  });
+
+  it.each([0, -1, Number.POSITIVE_INFINITY])(
+    "rejects invalid timeout %s before invoking the opener",
+    async (timeoutMs) => {
+      const run = vi.fn<ProcessRunner>().mockResolvedValue({ stdout: "", stderr: "" });
+
+      await expect(openCodexThread("019f63fc-8be5-7ef3-b888-76b96fb29e9c", { run, timeoutMs })).rejects.toThrow(
+        "timeoutMs must be a positive number",
+      );
+      expect(run).not.toHaveBeenCalled();
+    },
+  );
+
+  it("propagates opener failures", async () => {
+    const error = new Error("LaunchServices rejected the URL");
+    const run = vi.fn<ProcessRunner>().mockRejectedValue(error);
+
+    await expect(openCodexThread("019f63fc-8be5-7ef3-b888-76b96fb29e9c", { run })).rejects.toBe(error);
+  });
+});
 
 describe("listCodexThreadMetadata", () => {
   it("reads only metadata, enriches sparse Desktop state, and filters archived and subagent rows", async () => {

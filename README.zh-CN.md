@@ -9,7 +9,7 @@ SPDX-License-Identifier: MIT
 
 [English](README.md) | 简体中文
 
-一个本地优先的 macOS Raycast 扩展，用于查找 Codex Desktop 会话，并在 Zed、Visual Studio Code 或 Visual Studio Code Insiders 中打开对应的 Git checkout。
+一个本地优先的 macOS Raycast 扩展，用于切换 Codex Desktop 会话，并在 Zed、Visual Studio Code 或 Visual Studio Code Insiders 中打开对应的 Git checkout。
 
 ![使用虚构会话数据展示的 Codex Worktree Switcher](media/screenshot.jpg)
 
@@ -21,6 +21,7 @@ SPDX-License-Identifier: MIT
 - 按最近活跃时间列出本机未归档的 Codex Desktop 会话。
 - 展示会话标题与 `仓库 › 分支`；detached checkout 显示为 `Detached · <提交>`。
 - 支持按会话标题、仓库、分支、提交标识和路径搜索。
+- 在激活所配置的编辑器前，请求 Codex Desktop 打开所选会话。
 - 在所配置编辑器的现有窗口或新窗口中打开 checkout。
 - 支持复制 checkout 路径、在 Finder 中显示和手动刷新。
 - 即使多个 Codex 会话共用同一 checkout，也会保留为独立条目。
@@ -54,7 +55,7 @@ Raycast 显示扩展就绪后，打开 Raycast 并运行 **Switch Codex Worktree
 - 有分支：`仓库 › feature/branch-name`
 - detached：`仓库 › Detached · 398aecb5`
 
-默认 Action 会在所配置编辑器的现有窗口中打开 checkout，另一个 Action 会在新窗口中打开。Zed 使用 `--existing`/`--new`，VS Code 和 VS Code Insiders 使用 `--reuse-window`/`--new-window`。其他 Action 可以复制路径、在 Finder 中显示、刷新列表或打开扩展偏好设置。
+默认 Action 会先在后台打开 `codex://threads/<thread-id>`，再在所配置编辑器的现有窗口中打开 checkout，因此编辑器会在对应的 Codex 会话请求发出后被激活。另一个 Action 会在请求打开同一 Codex 会话的同时使用新的编辑器窗口。Zed 使用 `--existing`/`--new`，VS Code 和 VS Code Insiders 使用 `--reuse-window`/`--new-window`。其他 Action 可以复制路径、在 Finder 中显示、刷新列表或打开扩展偏好设置。
 
 ## 偏好设置
 
@@ -78,6 +79,8 @@ Raycast 显示扩展就绪后，打开 Raycast 并运行 **Switch Codex Worktree
 Codex SQLite 数据库通过 `/usr/bin/sqlite3` 打开，同时启用 `-readonly` 和 `PRAGMA query_only`。扩展不会查询 `preview`、`first_user_message`、rollout 路径、JSONL 或会话正文，也不会启动 Codex App Server、上传数据或创建缓存与会话历史。
 
 每个 checkout 在展示前会通过 `/usr/bin/git` 验证，在打开编辑器前会再次验证。所有外部命令均通过参数数组调用，并禁用 shell 执行。
+
+所选会话通过 Codex Desktop 的本地 `codex://threads/<thread-id>` deep link 打开。扩展会在后台把该链接传给 `/usr/bin/open`，此操作本身不会由扩展直接发起网络请求。
 
 安全问题请根据 [SECURITY.md](SECURITY.md) 私下报告。
 
@@ -112,6 +115,7 @@ Codex SQLite 数据库通过 `/usr/bin/sqlite3` 打开，同时启用 `-readonly
 - Codex Desktop 元数据表属于私有 schema，可能随时变化。
 - legacy 元数据可能早于根目录状态库，因此只会在所选 schema 版本没有可读根目录候选时使用。
 - Desktop 元数据库不包含 active/idle 状态，因此无法准确显示“工作中”标识。
+- deep link 投递成功仅表示 macOS 已接受请求，不代表 Codex Desktop 已完成会话跳转。
 - 扩展不会创建、修复、恢复、归档或删除 worktree 和 Codex 会话。
 - 这是 Raycast 浮层命令，不是编辑器内部常驻侧边栏。
 
