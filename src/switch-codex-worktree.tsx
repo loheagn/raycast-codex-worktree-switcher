@@ -11,13 +11,15 @@ import {
   Keyboard,
   List,
   openExtensionPreferences,
+  showHUD,
   showToast,
   Toast,
 } from "@raycast/api";
 import { usePromise } from "@raycast/utils";
 
-import { listCodexThreadMetadata } from "./codex-desktop";
+import { listCodexThreadMetadata, openCodexThread } from "./codex-desktop";
 import { editorName, type EditorId, type EditorOpenMode, openWorktreeInEditor, resolveEditorCli } from "./editors";
+import { openSessionTargets } from "./session-opener";
 import { buildWorktreeSessions, type WorktreeSession, threadActivityDate, threadCwdCandidates } from "./sessions";
 import { validateGitWorktree, validateGitWorktrees } from "./worktrees";
 
@@ -85,8 +87,8 @@ export default function Command() {
       style: Toast.Style.Animated,
       title:
         mode === "existing"
-          ? `正在切换 ${defaultEditorName} Git Checkout`
-          : `正在新的 ${defaultEditorName} 窗口打开 Git Checkout`,
+          ? `正在切换 ${defaultEditorName} 与 Codex 会话`
+          : `正在打开新的 ${defaultEditorName} 窗口并切换 Codex 会话`,
     });
 
     try {
@@ -96,17 +98,42 @@ export default function Command() {
       }
 
       const editorCli = await resolveEditorCli(defaultEditor, editorApplicationPath(preferences, defaultEditor));
-      await openWorktreeInEditor(defaultEditor, editorCli, currentWorktree.worktreeRoot, mode);
+      const openResult = await openSessionTargets({
+        openCodex: () => openCodexThread(session.id),
+        openEditor: () => openWorktreeInEditor(defaultEditor, editorCli, currentWorktree.worktreeRoot, mode),
+      });
+
+      if (openResult.status !== "success") {
+        switch (openResult.status) {
+          case "codex-failed":
+            await toast.hide();
+            await showHUD(`已打开 ${defaultEditorName}，但 Codex 会话切换失败：${errorMessage(openResult.error)}`);
+            return;
+          case "editor-failed":
+            toast.style = Toast.Style.Failure;
+            toast.title = `已请求切换 Codex 会话，但无法在 ${defaultEditorName} 中打开 Git Checkout`;
+            toast.message = errorMessage(openResult.error);
+            break;
+          case "both-failed":
+            toast.style = Toast.Style.Failure;
+            toast.title = `无法打开 ${defaultEditorName} 或请求切换 Codex 会话`;
+            toast.message = `Codex：${errorMessage(openResult.codexError)}；${defaultEditorName}：${errorMessage(openResult.editorError)}`;
+            break;
+        }
+        await refresh();
+        return;
+      }
+
       toast.style = Toast.Style.Success;
       toast.title =
         mode === "existing"
-          ? `已在 ${defaultEditorName} 中切换 Git Checkout`
-          : `已在新的 ${defaultEditorName} 窗口打开 Git Checkout`;
+          ? `已打开 ${defaultEditorName} 并请求切换 Codex 会话`
+          : `已打开新的 ${defaultEditorName} 窗口并请求切换 Codex 会话`;
       toast.message = currentWorktree.worktreeRoot;
       await closeMainWindow();
     } catch (openError) {
       toast.style = Toast.Style.Failure;
-      toast.title = `无法在 ${defaultEditorName} 中打开 Git Checkout`;
+      toast.title = `无法打开 ${defaultEditorName} 或请求切换 Codex 会话`;
       toast.message = errorMessage(openError);
       await refresh();
     }

@@ -9,7 +9,7 @@ SPDX-License-Identifier: MIT
 
 English | [简体中文](README.zh-CN.md)
 
-A local-first macOS Raycast extension that finds Codex Desktop sessions and opens their Git checkouts in Zed, Visual Studio Code, or Visual Studio Code Insiders.
+A local-first macOS Raycast extension that switches Codex Desktop sessions and opens their Git checkouts in Zed, Visual Studio Code, or Visual Studio Code Insiders.
 
 ![Codex Worktree Switcher showing synthetic session data](media/screenshot.jpg)
 
@@ -21,6 +21,7 @@ A local-first macOS Raycast extension that finds Codex Desktop sessions and open
 - Lists unarchived local Codex Desktop sessions by recent activity.
 - Displays the session title and `repository › branch`; detached checkouts use `Detached · <commit>`.
 - Searches session titles, repositories, branches, commit identifiers, and paths.
+- Requests Codex Desktop to open the selected session before activating the configured editor.
 - Opens a checkout in an existing or new window of the configured editor.
 - Copies checkout paths, reveals them in Finder, and refreshes metadata on demand.
 - Keeps separate Codex sessions as separate items even when they share a checkout.
@@ -54,7 +55,7 @@ Items are sorted globally by Codex's latest activity timestamp rather than group
 - attached HEAD: `repository › feature/branch-name`
 - detached HEAD: `repository › Detached · 398aecb5`
 
-The default action opens the checkout in an existing window of the configured editor. A second action opens a new window. Zed uses `--existing`/`--new`; VS Code and VS Code Insiders use `--reuse-window`/`--new-window`. Other actions copy the checkout path, reveal it in Finder, refresh the list, or open extension preferences.
+The default action opens `codex://threads/<thread-id>` in the background and then opens the checkout in an existing window of the configured editor, so the editor is activated after the matching Codex session request is sent. A second action opens a new editor window while requesting the same Codex session. Zed uses `--existing`/`--new`; VS Code and VS Code Insiders use `--reuse-window`/`--new-window`. Other actions copy the checkout path, reveal it in Finder, refresh the list, or open extension preferences.
 
 ## Preferences
 
@@ -78,6 +79,8 @@ The extension is local-only and makes no network requests. It reads only lifecyc
 Codex SQLite databases are opened through `/usr/bin/sqlite3` with both `-readonly` and `PRAGMA query_only`. The extension deliberately does not query `preview`, `first_user_message`, rollout paths, JSONL files, or conversation bodies. It does not start Codex App Server, upload data, or create caches and conversation history.
 
 Every checkout is validated with `/usr/bin/git` before display and again before an editor is opened. All external commands use argument arrays with shell execution disabled.
+
+The selected session is opened through Codex Desktop's local `codex://threads/<thread-id>` deep link. The extension passes the link to `/usr/bin/open` in the background and does not directly make a network request for this action.
 
 See [SECURITY.md](SECURITY.md) for private vulnerability reporting.
 
@@ -112,6 +115,7 @@ The extension prefers the highest state database version with a compatible candi
 - Codex Desktop metadata tables are a private schema and may change without notice.
 - A legacy metadata fallback can be older than a root database; it is used only when the selected schema version has no readable root candidate.
 - Active/idle state is not stored in the Desktop metadata databases, so the extension cannot accurately show a “working” indicator.
+- A successful deep-link dispatch confirms that macOS accepted the request, not that Codex Desktop finished navigating to the session.
 - The extension does not create, repair, restore, archive, or delete worktrees or Codex sessions.
 - This is a Raycast overlay command, not a persistent sidebar inside an editor.
 

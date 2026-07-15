@@ -11,6 +11,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 - Open Codex Git checkouts in Visual Studio Code or Visual Studio Code Insiders.
 - Choose the default editor used by the existing-window and new-window actions.
+- Request Codex Desktop to open the selected session when opening its Git checkout in the configured editor.
 
 ## [0.1.0] - 2026-07-14
 
