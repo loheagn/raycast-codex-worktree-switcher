@@ -19,7 +19,7 @@ export interface CreateLoginShellPathEnvironmentOptions extends ResolveLoginShel
   baseEnvironment?: NodeJS.ProcessEnv;
 }
 
-function defaultLoginShell(): string {
+function detectedLoginShell(): string | undefined {
   try {
     const shell = userInfo().shell?.trim();
     if (shell) {
@@ -33,8 +33,22 @@ function defaultLoginShell(): string {
   if (shell) {
     return shell;
   }
+}
 
-  return DEFAULT_LOGIN_SHELL;
+function allowlistedLoginShell(candidate: string | undefined): string {
+  // Return fixed literals so an untrusted candidate can never become the executable passed to execFile.
+  switch (candidate) {
+    case "/bin/bash":
+      return "/bin/bash";
+    case "/bin/zsh":
+      return "/bin/zsh";
+    case "/opt/homebrew/bin/fish":
+      return "/opt/homebrew/bin/fish";
+    case "/usr/local/bin/fish":
+      return "/usr/local/bin/fish";
+    default:
+      return DEFAULT_LOGIN_SHELL;
+  }
 }
 
 export function parseLoginShellPath(output: string): string {
@@ -51,7 +65,7 @@ export function parseLoginShellPath(output: string): string {
 }
 
 export async function resolveLoginShellPath(options: ResolveLoginShellPathOptions = {}): Promise<string> {
-  const shell = options.shell?.trim() || defaultLoginShell();
+  const shell = allowlistedLoginShell(options.shell?.trim() || detectedLoginShell());
 
   try {
     const { stdout } = await (options.run ?? runProcess)(shell, ["-ilc", PRINT_PATH_COMMAND], {

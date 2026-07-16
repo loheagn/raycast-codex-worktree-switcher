@@ -37,11 +37,41 @@ describe("resolveLoginShellPath", () => {
     );
   });
 
+  it("allows the Homebrew Fish login shell", async () => {
+    const run = vi.fn<ProcessRunner>().mockResolvedValue({
+      stdout: "\0/Users/test/go/bin:/opt/homebrew/bin:/usr/bin\n\0",
+      stderr: "",
+    });
+
+    await resolveLoginShellPath({ run, shell: "/opt/homebrew/bin/fish" });
+
+    expect(run).toHaveBeenCalledWith(
+      "/opt/homebrew/bin/fish",
+      ["-ilc", "/usr/bin/printf '\\0'; /usr/bin/printenv PATH; /usr/bin/printf '\\0'"],
+      { timeoutMs: 10_000 },
+    );
+  });
+
+  it("does not execute an unrecognized login shell path", async () => {
+    const run = vi.fn<ProcessRunner>().mockResolvedValue({
+      stdout: "\0/usr/bin:/bin\n\0",
+      stderr: "",
+    });
+
+    await resolveLoginShellPath({ run, shell: "/tmp/untrusted-shell" });
+
+    expect(run).toHaveBeenCalledWith(
+      "/bin/zsh",
+      ["-ilc", "/usr/bin/printf '\\0'; /usr/bin/printenv PATH; /usr/bin/printf '\\0'"],
+      { timeoutMs: 10_000 },
+    );
+  });
+
   it("reports the selected shell when environment loading fails", async () => {
     const run = vi.fn<ProcessRunner>().mockRejectedValue(new Error("startup failed"));
 
-    await expect(resolveLoginShellPath({ run, shell: "/bin/fish" })).rejects.toThrow(
-      "无法从用户登录 Shell（/bin/fish）读取 PATH：startup failed",
+    await expect(resolveLoginShellPath({ run, shell: "/opt/homebrew/bin/fish" })).rejects.toThrow(
+      "无法从用户登录 Shell（/opt/homebrew/bin/fish）读取 PATH：startup failed",
     );
   });
 });
