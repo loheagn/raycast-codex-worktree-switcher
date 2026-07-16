@@ -78,7 +78,7 @@ The extension is local-only and makes no network requests. It reads only lifecyc
 
 Codex SQLite databases are opened through `/usr/bin/sqlite3` with both `-readonly` and `PRAGMA query_only`. The extension deliberately does not query `preview`, `first_user_message`, rollout paths, JSONL files, or conversation bodies. It does not start Codex App Server, upload data, or create caches and conversation history.
 
-Every checkout is validated with `/usr/bin/git` before display and again before an editor is opened. All external commands use argument arrays with shell execution disabled.
+Every checkout is validated with `/usr/bin/git` before display and again before an editor is opened. Before launching Zed, the extension invokes the user's interactive login shell with a fixed command, extracts only its `PATH`, and passes that value to the Zed CLI. All other external commands use argument arrays with shell execution disabled.
 
 The selected session is opened through Codex Desktop's local `codex://threads/<thread-id>` deep link. The extension passes the link to `/usr/bin/open` in the background and does not directly make a network request for this action.
 

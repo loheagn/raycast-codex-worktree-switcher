@@ -18,7 +18,14 @@ import {
 import { usePromise } from "@raycast/utils";
 
 import { listCodexThreadMetadata, openCodexThread } from "./codex-desktop";
-import { editorName, type EditorId, type EditorOpenMode, openWorktreeInEditor, resolveEditorCli } from "./editors";
+import {
+  editorName,
+  type EditorId,
+  type EditorOpenMode,
+  openWorktreeInEditor,
+  resolveEditorCli,
+  resolveEditorEnvironment,
+} from "./editors";
 import { openSessionTargets } from "./session-opener";
 import { buildWorktreeSessions, type WorktreeSession, threadActivityDate, threadCwdCandidates } from "./sessions";
 import { validateGitWorktree, validateGitWorktrees } from "./worktrees";
@@ -100,7 +107,10 @@ export default function Command() {
       const editorCli = await resolveEditorCli(defaultEditor, editorApplicationPath(preferences, defaultEditor));
       const openResult = await openSessionTargets({
         openCodex: () => openCodexThread(session.id),
-        openEditor: () => openWorktreeInEditor(defaultEditor, editorCli, currentWorktree.worktreeRoot, mode),
+        openEditor: async () => {
+          const options = { env: await resolveEditorEnvironment(defaultEditor) };
+          await openWorktreeInEditor(defaultEditor, editorCli, currentWorktree.worktreeRoot, mode, options);
+        },
       });
 
       if (openResult.status !== "success") {

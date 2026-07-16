@@ -78,7 +78,7 @@ Raycast 显示扩展就绪后，打开 Raycast 并运行 **Switch Codex Worktree
 
 Codex SQLite 数据库通过 `/usr/bin/sqlite3` 打开，同时启用 `-readonly` 和 `PRAGMA query_only`。扩展不会查询 `preview`、`first_user_message`、rollout 路径、JSONL 或会话正文，也不会启动 Codex App Server、上传数据或创建缓存与会话历史。
 
-每个 checkout 在展示前会通过 `/usr/bin/git` 验证，在打开编辑器前会再次验证。所有外部命令均通过参数数组调用，并禁用 shell 执行。
+每个 checkout 在展示前会通过 `/usr/bin/git` 验证，在打开编辑器前会再次验证。启动 Zed 前，扩展会使用固定命令调用用户的交互式登录 Shell，仅提取其中的 `PATH` 并传给 Zed CLI。其余外部命令均通过参数数组调用，并禁用 shell 执行。
 
 所选会话通过 Codex Desktop 的本地 `codex://threads/<thread-id>` deep link 打开。扩展会在后台把该链接传给 `/usr/bin/open`，此操作本身不会由扩展直接发起网络请求。
 

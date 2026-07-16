@@ -7,6 +7,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Fixed
+
+- Launch Zed with the `PATH` from the user's interactive login shell so language servers can find developer tools.
+
 ### Added
 
 - Open Codex Git checkouts in Visual Studio Code or Visual Studio Code Insiders.
