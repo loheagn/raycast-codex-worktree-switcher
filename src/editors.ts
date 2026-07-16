@@ -6,6 +6,7 @@ import { access } from "node:fs/promises";
 import path from "node:path";
 
 import { type ProcessRunner, runProcess } from "./process";
+import { type CreateLoginShellPathEnvironmentOptions, createLoginShellPathEnvironment } from "./shell-environment";
 
 export type EditorId = "zed" | "vscode" | "vscode-insiders";
 export type EditorOpenMode = "existing" | "new";
@@ -16,9 +17,12 @@ export interface ResolveEditorOptions {
 }
 
 export interface OpenEditorOptions {
+  env?: NodeJS.ProcessEnv;
   run?: ProcessRunner;
   timeoutMs?: number;
 }
+
+export type ResolveEditorEnvironmentOptions = CreateLoginShellPathEnvironmentOptions;
 
 interface EditorDefinition {
   applicationCliPath: readonly string[];
@@ -73,6 +77,13 @@ export function editorName(editor: EditorId): string {
   return EDITORS[editor].name;
 }
 
+export async function resolveEditorEnvironment(
+  editor: EditorId,
+  options: ResolveEditorEnvironmentOptions = {},
+): Promise<NodeJS.ProcessEnv | undefined> {
+  return editor === "zed" ? createLoginShellPathEnvironment(options) : undefined;
+}
+
 export function editorCliCandidates(
   editor: EditorId,
   applicationPath?: string,
@@ -110,6 +121,9 @@ export async function openWorktreeInEditor(
   await (options.run ?? runProcess)(
     editorCli,
     [mode === "existing" ? definition.existingWindowFlag : definition.newWindowFlag, worktreePath],
-    { timeoutMs: options.timeoutMs ?? 15_000 },
+    {
+      ...(options.env === undefined ? {} : { env: options.env }),
+      timeoutMs: options.timeoutMs ?? 15_000,
+    },
   );
 }

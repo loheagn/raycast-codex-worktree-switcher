@@ -3,7 +3,14 @@
 
 import { describe, expect, it, vi } from "vitest";
 
-import { editorCliCandidates, editorName, type EditorId, openWorktreeInEditor, resolveEditorCli } from "../src/editors";
+import {
+  editorCliCandidates,
+  editorName,
+  type EditorId,
+  openWorktreeInEditor,
+  resolveEditorCli,
+  resolveEditorEnvironment,
+} from "../src/editors";
 import type { ProcessRunner } from "../src/process";
 
 describe("openWorktreeInEditor", () => {
@@ -21,6 +28,46 @@ describe("openWorktreeInEditor", () => {
     await openWorktreeInEditor(editor, "/path/to/editor-cli", worktreePath, mode, { run });
 
     expect(run).toHaveBeenCalledWith("/path/to/editor-cli", [flag, worktreePath], { timeoutMs: 15_000 });
+  });
+
+  it("passes an explicit environment to the editor CLI", async () => {
+    const run = vi.fn<ProcessRunner>().mockResolvedValue({ stdout: "", stderr: "" });
+    const env = { HOME: "/Users/test", PATH: "/opt/homebrew/bin:/usr/bin" };
+
+    await openWorktreeInEditor("zed", "/path/to/zed", "/path/to/worktree", "existing", { env, run });
+
+    expect(run).toHaveBeenCalledWith("/path/to/zed", ["--existing", "/path/to/worktree"], {
+      env,
+      timeoutMs: 15_000,
+    });
+  });
+});
+
+describe("resolveEditorEnvironment", () => {
+  it("loads the login shell PATH for Zed without replacing other environment variables", async () => {
+    const run = vi.fn<ProcessRunner>().mockResolvedValue({
+      stdout: "\0/Users/test/go/bin:/opt/homebrew/bin:/usr/bin\n\0",
+      stderr: "",
+    });
+
+    await expect(
+      resolveEditorEnvironment("zed", {
+        baseEnvironment: { HOME: "/Users/test", PATH: "/usr/bin" },
+        run,
+        shell: "/bin/fish",
+      }),
+    ).resolves.toEqual({
+      HOME: "/Users/test",
+      PATH: "/Users/test/go/bin:/opt/homebrew/bin:/usr/bin",
+    });
+    expect(run).toHaveBeenCalledOnce();
+  });
+
+  it.each(["vscode", "vscode-insiders"] as const)("does not load a shell environment for %s", async (editor) => {
+    const run = vi.fn<ProcessRunner>();
+
+    await expect(resolveEditorEnvironment(editor, { run, shell: "/bin/fish" })).resolves.toBeUndefined();
+    expect(run).not.toHaveBeenCalled();
   });
 });
 
