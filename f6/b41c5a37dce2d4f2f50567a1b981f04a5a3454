@@ -1,0 +1,27 @@
+README.md
+  s_5e674aa57c561d::t_6e03960b432ffd 81
+src/shell-environment.ts
+  s_5e674aa57c561d::t_6e03960b432ffd 22,36,38,40-51,68
+  s_5e674aa57c561d::t_9300b4dbcbacfa 39
+README.zh-CN.md
+  s_5e674aa57c561d::t_6e03960b432ffd 81
+tests/shell-environment.test.ts
+  s_5e674aa57c561d::t_6e03960b432ffd 40-69
+  s_5e674aa57c561d::t_9300b4dbcbacfa 73-74
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "f6b41c5a37dce2d4f2f50567a1b981f04a5a3454",
+  "prompts": {},
+  "sessions": {
+    "s_5e674aa57c561d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f6535-db8a-7da0-a89e-dffefbf49795",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "loheagn <loheagn@icloud.com>"
+    }
+  }
+}
