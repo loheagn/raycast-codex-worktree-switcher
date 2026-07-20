@@ -119,7 +119,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@raycast/api": "1.104.22",
+    "@raycast/api": "1.104.23",
     "@raycast/utils": "2.2.7"
   },
   "devDependencies": {
