@@ -129,7 +129,7 @@
     "eslint": "^9.22.0",
     "prettier": "^3.5.3",
     "typescript": "^5.8.2",
-    "vitest": "^4.1.0"
+    "vitest": "^4.1.11"
   },
   "engines": {
     "node": ">=22.22.2"
